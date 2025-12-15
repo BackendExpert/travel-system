@@ -10,6 +10,10 @@ const DateInput = ({
         <div>
             <input 
                 type="date"
+                name={name}
+                value={value}
+                onChange={onChange}
+                required={required}
                 className='
                     w-full h-10 bg-white border pl-4 border-gray-200 rounded
                     placeholder:text-gray-400
