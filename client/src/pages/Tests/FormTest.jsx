@@ -1,8 +1,9 @@
 import React from 'react'
-import DefultInput from '../component/Forms/DefultInput'
-import DateInput from '../component/Forms/DateInput'
-import DropDown from '../component/Forms/DropDown'
-import TextArea from '../component/Forms/TextArea'
+import DefultInput from '../../component/Forms/DefultInput'
+import DateInput from '../../component/Forms/DateInput'
+import DropDown from '../../component/Forms/DropDown'
+import TextArea from '../../component/Forms/TextArea'
+import Button from '../../component/Buttons/Button'
 
 const FormTest = () => {
     const options = [
@@ -28,6 +29,12 @@ const FormTest = () => {
             <div className="mt-4"></div>
             <TextArea 
                 placeholder='Enter Your Bio'
+            />
+
+            <Button 
+                type='button'
+                color='success'
+                label='Click me'
             />
 
 
