@@ -12,7 +12,7 @@ function App() {
                 <Route path='/' element={<WebSite />} >
                     <Route path='*' element={<DefultError /> } />
                     <Route index element={<FormTest /> } /> 
-                    <Route path='/model' element={<ModelPopup /> } />
+                    <Route path='model' element={<ModelPopup /> } />
                     <Route path='notifications' element={<Popups /> } />
                 </Route>
             </Routes>
