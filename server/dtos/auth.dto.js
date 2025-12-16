@@ -1,7 +1,11 @@
 exports.CreateAuthDTO = (email) => ({ email })
 
-exports.CreateAccountResDTO = (token, message="Welcome to System") => ({ success:true, token, message })
+exports.CreateAccountResDTO = (message="Welcome to System") => ({ success:true, message })
 
-exports.CreateLoginResDTO = (token, message="Logn Success") => ({ success: true, token, message })
+exports.CreateLoginResDTO = (message="OTP send to email") => ({ success: true, message })
+
+exports.VerifyPasswordDTO = (email, otp) => ({ email, otp })
+
+exports.VerifyPasswordResDTO = (token, message="Login Success") => ({ success: true, token, message})
 
 exports.ErrorResDTO = (message = "Something went wrong") => ({ success: false, message })

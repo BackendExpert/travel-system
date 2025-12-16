@@ -7,6 +7,7 @@ const bcrypt = require("bcrypt");
 
 const sendEmail = require("../utils/email/emailTransporter");
 const logUserAction = require("../utils/others/logUserAction");
+const tokenCreator = require("../utils/tokens/generateToken")
 const {
     CreateAccountResDTO,
     CreateLoginResDTO
@@ -162,6 +163,151 @@ class AuthService {
         });
 
     }
+
+    static async sendLoginNotificationEmail(email) {
+        const displayName = email.split("@")[0];
+
+        await sendEmail({
+            to: email,
+            subject: "Login Successful – Travel Management System",
+            html: `
+                <div style="
+                    background-color: #f1f5f9;
+                    padding: 50px 16px;
+                    font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+                ">
+                    <div style="
+                        max-width: 640px;
+                        margin: 0 auto;
+                        background-color: #ffffff;
+                        border-radius: 18px;
+                        overflow: hidden;
+                        box-shadow: 0 20px 45px rgba(15, 23, 42, 0.12);
+                    ">
+
+                        <!-- Top Accent -->
+                        <div style="
+                            height: 6px;
+                            background: linear-gradient(90deg, #22c55e, #0ea5e9);
+                        "></div>
+
+                        <!-- Header -->
+                        <div style="padding: 34px 40px 20px;">
+                            <h1 style="
+                                margin: 0;
+                                font-size: 26px;
+                                font-weight: 800;
+                                color: #0f172a;
+                                letter-spacing: -0.3px;
+                            ">
+                                Login Successful
+                            </h1>
+
+                            <p style="
+                                margin-top: 8px;
+                                font-size: 15px;
+                                color: #64748b;
+                            ">
+                                Travel Management System
+                            </p>
+                        </div>
+
+                        <!-- Divider -->
+                        <div style="height: 1px; background-color: #e5e7eb;"></div>
+
+                        <!-- Content -->
+                        <div style="padding: 32px 40px;">
+                            <p style="
+                                font-size: 16px;
+                                color: #1e293b;
+                                margin-bottom: 18px;
+                            ">
+                                Hello <strong>${displayName}</strong>,
+                            </p>
+
+                            <p style="
+                                font-size: 15.5px;
+                                line-height: 1.7;
+                                color: #475569;
+                                margin-bottom: 26px;
+                            ">
+                                You have successfully signed in to the
+                                <strong>Travel Management System</strong> using secure,
+                                password-less authentication.
+                            </p>
+
+                            <!-- Login Details -->
+                            <div style="
+                                background-color: #0f172a;
+                                color: #ffffff;
+                                border-radius: 14px;
+                                padding: 22px;
+                                margin: 28px 0;
+                            ">
+                                <h3 style="
+                                    margin: 0 0 14px;
+                                    font-size: 18px;
+                                    font-weight: 600;
+                                ">
+                                    Login Information
+                                </h3>
+
+                                <p style="margin: 6px 0; font-size: 14px;">
+                                    <strong>Time:</strong> ${metadata.timestamp}
+                                </p>
+                                <p style="margin: 6px 0; font-size: 14px;">
+                                    <strong>Device:</strong> ${metadata.userAgent}
+                                </p>
+                                <p style="margin: 6px 0; font-size: 14px;">
+                                    <strong>IP Address:</strong> ${metadata.ipAddress}
+                                </p>
+                            </div>
+
+                            <p style="
+                                font-size: 14px;
+                                color: #64748b;
+                            ">
+                                🔐 If this login was not initiated by you, please contact the system administrator immediately.
+                            </p>
+
+                            <div style="
+                                margin-top: 26px;
+                                padding: 18px;
+                                background-color: #f8fafc;
+                                border-radius: 12px;
+                                font-size: 14px;
+                                color: #475569;
+                            ">
+                                You may now continue planning, tracking, and managing your travel activities securely.
+                            </div>
+                        </div>
+
+                        <!-- Footer -->
+                        <div style="
+                            padding: 26px 40px;
+                            background-color: #f1f5f9;
+                            border-top: 1px solid #e5e7eb;
+                            text-align: center;
+                            font-size: 13px;
+                            color: #64748b;
+                        ">
+                            <strong style="color:#0f172a;">
+                                Travel Management System
+                            </strong>
+                            <div style="margin-top: 6px;">
+                                Secure Access • Activity Monitoring • Travel Operations
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+                `
+        });
+
+
+    }
+
+
     // create registation OR login
     static async createAuth(email, req) {
         const user = await User.findOne({ email });
@@ -208,7 +354,7 @@ class AuthService {
 
             return CreateAccountResDTO();
         }
-        
+
         if (req) {
             await logUserAction(
                 req,
@@ -225,6 +371,64 @@ class AuthService {
 
         return CreateLoginResDTO();
 
+    }
+
+    static async verifyPassword(email, otp, req) {
+        const user = await User.findOne({ email });
+
+        const checkotp = await UserOTP.findOne({ email: email });
+        const checkpass = await bcrypt.compare(otp, checkotp.otp)
+
+        if (!checkpass) {
+            await logUserAction(
+                req,
+                "LOGIN ATTEMPT_FAILD",
+                `${email} Login Attempt Faild, Wrong Password`,
+                {
+                    ipAddress: req.headers["x-forwarded-for"] || req.socket.remoteAddress,
+                    userAgent: req.headers["user-agent"],
+                    timestamp: new Date()
+                },
+                user._id
+            );
+
+            throw new Error("Cannot Continue, check your Password")
+        }
+
+        const token = tokenCreator(
+            {
+                id: user._id,
+                email: user.email,
+                username: user.username,
+                role: getuserrole?.name || "User",
+            },
+            "1d"
+        );
+
+        if (token) {
+            if (req) {
+                await logUserAction(
+                    req,
+                    "LOGIN_ATTEMPT_SUCCESS",
+                    `${email} Login Attempt Success`,
+                    {
+                        ipAddress: req.headers["x-forwarded-for"] || req.socket.remoteAddress,
+                        userAgent: req.headers["user-agent"],
+                        timestamp: new Date()
+                    },
+                    user._id
+                );
+
+                const sendLoginemail = await this.sendLoginNotificationEmail(email);
+
+                if (sendLoginemail) {
+                    user.lastLogin = new Date();
+                    await user.save();
+                }
+
+                return VerifyPasswordResDTO(token)                
+            }
+        }
     }
 }
 
