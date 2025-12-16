@@ -30,12 +30,16 @@ const Auth = () => {
                 setNotif({ message: res.data.message, type: 'success' });
                 setsuccessattempt(true);
             } else {
-                setNotif({ message: res.data.error, type: 'error' });
+                setNotif({ message: res.data.message, type: 'error' });
                 setsuccessattempt(false);
             }
         } catch (err) {
-            setNotif({ message: err.response?.data?.error || 'Server error', type: 'error' });
-        } finally {
+            setNotif({
+                message: err.response?.data?.message || 'Server error',
+                type: 'error'
+            });
+        }
+        finally {
             setLoading(false);
         }
     };
@@ -55,10 +59,13 @@ const Auth = () => {
                 login(res.data.token);
                 setTimeout(() => navigate('/dashboard'), 2000);
             } else {
-                setNotif({ message: res.data.error, type: 'error' });
+                setNotif({ message: res.data.message, type: 'error' });
             }
         } catch (err) {
-            setNotif({ message: err.response?.data?.error || 'Server error', type: 'error' });
+            setNotif({
+                message: err.response?.data?.message || 'Server error',
+                type: 'error'
+            });
         } finally {
             setLoading(false);
         }
