@@ -12,7 +12,7 @@ const transporter = nodemailer.createTransport({
 const sendEmail = async ({ to, subject, html, attachments }) => {
     try {
         const info = await transporter.sendMail({
-            from: `"CareerAI Helper" <${process.env.EMAIL_USER}>`,
+            from: `"Travel Management" <${process.env.EMAIL_USER}>`,
             to,
             subject,
             html,
