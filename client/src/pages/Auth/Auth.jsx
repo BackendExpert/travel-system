@@ -11,6 +11,7 @@ const Auth = () => {
     const navigate = useNavigate();
     const [Loading, setLoading] = useState(false);
     const { login } = useAuth()
+    const [successattempt, setsuccessattempt] = useState(false)
 
     const { values, handleChange } = useForm({
         email: '',
@@ -37,6 +38,21 @@ const Auth = () => {
         }
     }
 
+    const headleVerifyPassword = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+
+        try {
+            const res = await API.post('/auth/auth', values, {
+                headers: { "Content-Type": "application/json" },
+            });
+        }
+        catch (err) {
+            alert(res.data.error)
+
+        }
+    }
+
     return (
         <div className='bg-gray-50 min-h-screen pt-24'
             style={{
@@ -59,7 +75,7 @@ const Auth = () => {
                 </div>
 
                 <div className="mt-4">
-                    <form action="" method="post">
+                    <form onSubmit={headleAuth} method="post">
                         <DefultInput
                             type='email'
                             name={'email'}
@@ -73,7 +89,7 @@ const Auth = () => {
                             <Button
                                 type='submit'
                                 color='#238636'
-                                label='Continue to Account'
+                                label='Request Password'
                             />
                         </div>
                     </form>
