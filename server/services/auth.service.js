@@ -10,7 +10,8 @@ const logUserAction = require("../utils/others/logUserAction");
 const tokenCreator = require("../utils/tokens/generateToken")
 const {
     CreateAccountResDTO,
-    CreateLoginResDTO
+    CreateLoginResDTO,
+    VerifyPasswordResDTO
 } = require("../dtos/auth.dto");
 
 class AuthService {
@@ -164,7 +165,7 @@ class AuthService {
 
     }
 
-    static async sendLoginNotificationEmail(email) {
+    static async sendLoginNotificationEmail(email, metadata) {
         const displayName = email.split("@")[0];
 
         await sendEmail({
@@ -374,16 +375,18 @@ class AuthService {
     }
 
     static async verifyPassword(email, otp, req) {
+
         const user = await User.findOne({ email });
+        if (!user) {
+            throw new Error("User not found");
+        }
 
-        const checkotp = await UserOTP.findOne({ email: email });
-        const checkpass = await bcrypt.compare(otp, checkotp.otp)
-
-        if (!checkpass) {
+        const checkotp = await UserOTP.findOne({ email });
+        if (!checkotp || !checkotp.otp) {
             await logUserAction(
                 req,
-                "LOGIN ATTEMPT_FAILD",
-                `${email} Login Attempt Faild, Wrong Password`,
+                "LOGIN_ATTEMPT_FAILED",
+                `${email} Login Attempt Failed, OTP not found or expired`,
                 {
                     ipAddress: req.headers["x-forwarded-for"] || req.socket.remoteAddress,
                     userAgent: req.headers["user-agent"],
@@ -392,44 +395,63 @@ class AuthService {
                 user._id
             );
 
-            throw new Error("Cannot Continue, check your Password")
+            throw new Error("OTP expired or invalid. Please request a new one.");
         }
+
+        const isOtpValid = await bcrypt.compare(otp, checkotp.otp);
+        if (!isOtpValid) {
+            await logUserAction(
+                req,
+                "LOGIN_ATTEMPT_FAILED",
+                `${email} Login Attempt Failed, Wrong OTP`,
+                {
+                    ipAddress: req.headers["x-forwarded-for"] || req.socket.remoteAddress,
+                    userAgent: req.headers["user-agent"],
+                    timestamp: new Date()
+                },
+                user._id
+            );
+
+            throw new Error("Invalid OTP");
+        }
+
+        const getuserrole = await Role.findById(user.role);
 
         const token = tokenCreator(
             {
                 id: user._id,
                 email: user.email,
                 username: user.username,
-                role: getuserrole?.name || "User",
+                role: getuserrole?.name,
             },
             "1d"
         );
 
-        if (token) {
-            if (req) {
-                await logUserAction(
-                    req,
-                    "LOGIN_ATTEMPT_SUCCESS",
-                    `${email} Login Attempt Success`,
-                    {
-                        ipAddress: req.headers["x-forwarded-for"] || req.socket.remoteAddress,
-                        userAgent: req.headers["user-agent"],
-                        timestamp: new Date()
-                    },
-                    user._id
-                );
+        const metadata = {
+            ipAddress: req.headers["x-forwarded-for"] || req.socket.remoteAddress,
+            userAgent: req.headers["user-agent"],
+            timestamp: new Date().toLocaleString()
+        };
 
-                const sendLoginemail = await this.sendLoginNotificationEmail(email);
+        await logUserAction(
+            req,
+            "LOGIN_ATTEMPT_SUCCESS",
+            `${email} Login Attempt Success`,
+            metadata,
+            user._id
+        );
 
-                if (sendLoginemail) {
-                    user.lastLogin = new Date();
-                    await user.save();
-                }
+        user.lastLogin = new Date();
+        await user.save();
 
-                return VerifyPasswordResDTO(token)                
-            }
-        }
+        this.sendLoginNotificationEmail(email, metadata)
+            .catch(err => console.error("Login email failed:", err));
+
+        await UserOTP.deleteOne({ email });
+
+        return VerifyPasswordResDTO(token);
     }
+
 }
 
 module.exports = AuthService
