@@ -18,6 +18,28 @@ const AuthController = {
         catch (err) {
             return res.status(400).json(ErrorResDTO(err.message));
         }
+    },
+
+    verifypassword: async (req, res) => {
+        try {
+            const {
+                email,
+                otp
+            } = req.body 
+
+            const dto = VerifyPasswordDTO(email, otp)
+
+            const result = await AuthService.verifyPassword(
+                dto.email,
+                dto.otp,
+                req
+            )
+
+            res.status(200).json(result)
+        }
+        catch (err) {
+            return res.status(400).json(ErrorResDTO(err.message));
+        }
     }
 };
 
