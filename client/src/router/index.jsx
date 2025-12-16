@@ -4,6 +4,7 @@ import Popups from '../pages/Tests/Popups'
 import ModelPopup from '../pages/Tests/ModelPopup'
 import FormTest from '../pages/Tests/FormTest'
 import DefultError from '../component/Error/DefultError'
+import Auth from '../pages/Auth/Auth'
 
 function App() {
     return (
@@ -11,7 +12,7 @@ function App() {
             <Routes>
                 <Route path='/' element={<WebSite />} >
                     <Route path='*' element={<DefultError /> } />
-                    <Route index element={<FormTest /> } /> 
+                    <Route index element={<Auth /> } /> 
                     <Route path='model' element={<ModelPopup /> } />
                     <Route path='notifications' element={<Popups /> } />
                 </Route>

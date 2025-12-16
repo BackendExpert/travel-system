@@ -26,8 +26,7 @@ const Toast = ({ title, message, type = "success", onClose }) => {
                         ${type === "info" ? "text-blue-600" : ""}
                         `}>{title}</h1>
                     <p className="text-gray-500">
-                        {message}
-                        loremasd jaksjd lkas
+                        {message}                        
                     </p>
                 </div>
 
