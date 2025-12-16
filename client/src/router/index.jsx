@@ -8,6 +8,7 @@ import Auth from '../pages/Auth/Auth'
 import DashHome from '../pages/Dashboard/DashHome'
 import PrivateRoute from '../router/PrivateRoute'
 import Unauthorized from './Unauthorized'
+import Dashboard from '../layouts/Dashboard'
 
 function App() {
     return (
@@ -21,7 +22,7 @@ function App() {
                     <Route path='unauthorized' element={<Unauthorized /> } />
                 </Route>
 
-                <Route path='/dashboard'  element={<PrivateRoute roles={['admin', 'advisor', 'user']}><Dashboard /></PrivateRoute>}>
+                <Route path='/dashboard' element={<PrivateRoute roles={['admin', 'advisor', 'user']}><Dashboard /></PrivateRoute>}>
                     <Route index element={<PrivateRoute roles={['admin', 'advisor', 'user']}><DashHome /></PrivateRoute>} />
                 </Route>    
             </Routes>
